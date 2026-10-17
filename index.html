@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Floresta noturna</title>
+  <meta name="description" content="Uma floresta à noite em primeira pessoa, com uma tocha na mão e a lua passando entre as copas.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;1,400&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="css/estilo.css">
+  <script type="importmap">{ "imports": { "three": "./vendor/three.module.js" } }</script>
+</head>
+<body>
+  <canvas id="tela" aria-label="Floresta em 3D"></canvas>
+
+  <div class="tela-cheia" id="carregando">
+    <p class="titulo">Floresta <em>noturna</em></p>
+    <div class="trilho"><div class="barra" id="barra"></div></div>
+    <p class="miudo" id="carregando-texto">Acordando a floresta</p>
+  </div>
+
+  <div class="tela-cheia capa oculta" id="capa">
+    <p class="titulo">Floresta <em>noturna</em></p>
+    <button class="entrar" id="entrar" type="button">Entrar na mata</button>
+    <dl class="teclas">
+      <div><dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>andar</dd></div>
+      <div><dt><kbd>Ctrl</kbd></dt><dd>correr</dd></div>
+      <div><dt><kbd>Espaço</kbd></dt><dd>pular</dd></div>
+      <div><dt><kbd>Shift</kbd></dt><dd>agachar</dd></div>
+      <div><dt><kbd>Esc</kbd></dt><dd>sair</dd></div>
+    </dl>
+    <p class="miudo">Abre em tela cheia: é o único jeito de o navegador deixar o Ctrl para o jogo (Ctrl+W fecharia a aba).</p>
+  </div>
+
+  <p class="aviso" id="aviso-teclado" hidden>Este navegador não travou o teclado: segurar Ctrl e apertar W pode fechar a aba.</p>
+  <p class="qps" id="qps" hidden></p>
+
+  <script type="module" src="js/principal.js"></script>
+</body>
+</html>
