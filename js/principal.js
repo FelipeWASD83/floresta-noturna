@@ -36,22 +36,21 @@ async function etapa(nome, fn) {
   await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
   const v = fn();
   feitos++;
-  barra.style.width = `${Math.min(100, (feitos / 22) * 100)}%`;
+  barra.style.width = `${Math.min(100, (feitos / 16) * 100)}%`;
   return v;
 }
-const progresso = async () => { feitos++; barra.style.width = `${Math.min(100, (feitos / 22) * 100)}%`; await new Promise((r) => setTimeout(r, 0)); };
+const progresso = async () => { feitos++; barra.style.width = `${Math.min(100, (feitos / 16) * 100)}%`; await new Promise((r) => setTimeout(r, 0)); };
 
 async function iniciar() {
   const tex = {};
   tex.cascas = await etapa('Descascando troncos', () => TX.gerarCascas());
-  tex.folhaCarvalho = await etapa('Desenhando folhas de carvalho', () => TX.gerarAtlasFolhas('carvalho'));
-  tex.folhaFaia = await etapa('Desenhando folhas de faia', () => TX.gerarAtlasFolhas('faia'));
-  tex.agulhas = await etapa('Contando agulhas de abeto', () => TX.gerarAtlasAgulhas());
+  tex.agulhas = await etapa('Contando agulhas de pinheiro', () => TX.gerarAtlasAgulhas());
+  tex.grama = await etapa('Deixando a grama crescer', () => TX.gerarGrama());
   tex.samambaia = await etapa('Abrindo samambaias', () => TX.gerarSamambaia());
   tex.chao = await etapa('Espalhando folhas secas', () => TX.gerarChao());
   tex.macro = await etapa('Misturando musgo', () => TX.gerarMacro());
   const ruido3d = await etapa('Soltando a névoa', () => TX.gerarRuido3D());
-  for (const t of [tex.cascas.sulcada.cor, tex.cascas.lisa.cor, tex.cascas.escamosa.cor, tex.chao.cor, tex.folhaCarvalho, tex.folhaFaia, tex.agulhas, tex.samambaia]) {
+  for (const t of [tex.cascas.sulcada.cor, tex.cascas.lisa.cor, tex.cascas.escamosa.cor, tex.chao.cor, tex.agulhas, tex.grama, tex.samambaia]) {
     t.anisotropy = renderer.capabilities.getMaxAnisotropy();
   }
 
@@ -59,7 +58,7 @@ async function iniciar() {
   cena.add(terreno);
   const alturas = await etapa('Medindo o relevo', () => texturaAlturas());
   rotulo.textContent = 'Plantando a floresta';
-  const mundo = await criarFloresta(cena, tex, progresso);
+  const mundo = await criarFloresta(cena, tex, progresso, renderer);
 
   const ceu = criarCeu(tex.macro);
   ceu.material.uniforms.uLuaDir.value.copy(luaDir);
@@ -68,7 +67,11 @@ async function iniciar() {
   // luzes
   const lua = new THREE.DirectionalLight(luaCor, 0.55);
   lua.castShadow = true;
-  lua.shadow.mapSize.set(4096, 4096);
+  // Sombra da lua num quadrado de 184 m que acompanha o jogador, refeita a
+  // cada quadro. Uma sombra fixa do mundo inteiro, desenhada uma vez só, foi
+  // medida em 16/10/2026 e ficou MAIS lenta (39 contra 49 qps em 3440x1440):
+  // o desenho some, mas todo pixel até o horizonte passa a consultar o mapa.
+  lua.shadow.mapSize.set(2048, 2048);
   const S = 92;
   Object.assign(lua.shadow.camera, { left: -S, right: S, top: S, bottom: -S, near: 1, far: 600 });
   lua.shadow.camera.updateProjectionMatrix();

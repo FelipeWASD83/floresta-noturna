@@ -40,69 +40,28 @@ function perpendicular(d) {
 // comp dos filhos é fração do comprimento do pai; raio é fração do raio do
 // pai no ponto onde o filho nasce (modelo de cano: filho mais fino que o pai).
 export const ESPECIES = {
-  carvalho: {
-    casca: 'sulcada', folha: 'carvalho', tronco: [9.5, 11.5], raio: [0.38, 0.5],
-    raizes: 7, sapata: 0.5,
+  // pinheiro de floresta: cone alto, galhos em andares (verticilos) e a
+  // folhagem em placas grandes de agulha, poucas e cheias
+  pinheiro: {
+    casca: 'escamosa', folha: 'agulha', tronco: [15, 22], raio: [0.27, 0.36],
+    raizes: 6, sapata: 0.35, lodNivelMax: [9, 0, 0],
     niveis: [
-      { segs: 20, radial: 26, curva: 0.13, tropismo: 0.035, ponta: 0.32,
-        filhos: { qtd: 8, de: 0.36, ate: 1.0, ang: 50, angVar: 14, comp: 0.66, raio: 0.6, perfil: 'decorrente' } },
-      { segs: 11, radial: 12, curva: 0.34, tropismo: 0.05, ponta: 0.18,
-        filhos: { qtd: 6, de: 0.18, ate: 1.0, ang: 44, angVar: 16, comp: 0.5, raio: 0.62 } },
-      { segs: 6, radial: 7, curva: 0.42, tropismo: 0.02, ponta: 0.22,
-        filhos: { qtd: 7, de: 0.12, ate: 1.0, ang: 46, angVar: 18, comp: 0.42, raio: 0.58 } },
-      { segs: 3, radial: 4, curva: 0.5, tropismo: 0.0, ponta: 0.35 },
+      { segs: 22, radial: 16, curva: 0.03, tropismo: 0.05, ponta: 0.03,
+        filhos: { qtd: 46, de: 0.14, ate: 0.97, ang: 80, angVar: 10, comp: 0.27, raio: 0.28, perfil: 'conico', verticilo: 5 } },
+      { segs: 6, radial: 6, curva: 0.14, tropismo: -0.03, ponta: 0.12 },
     ],
-    folhas: { densidade: { 2: 2.2, 3: 10.5 }, inicio: 0.3, tamanho: 0.58, modo: 'cacho', subir: 0.5 },
+    folhas: { densidade: { 1: 1.7 }, inicio: 0.12, tamanho: 1.55, modo: 'placa', secoAte: 0.1, topo: 5 },
   },
-  faia: {
-    casca: 'lisa', folha: 'faia', tronco: [14, 17], raio: [0.32, 0.42],
-    raizes: 5, sapata: 0.35,
+  // pinheirinho: o mesmo desenho pequeno, na altura do rosto
+  pinheirinho: {
+    casca: 'escamosa', folha: 'agulha', tronco: [2.2, 3.8], raio: [0.04, 0.07],
+    raizes: 0, sapata: 0.15, lodNivelMax: [9, 0, 0],
     niveis: [
-      { segs: 22, radial: 24, curva: 0.08, tropismo: 0.04, ponta: 0.3,
-        filhos: { qtd: 10, de: 0.5, ate: 1.0, ang: 36, angVar: 12, comp: 0.42, raio: 0.52, perfil: 'decorrente' } },
-      { segs: 10, radial: 11, curva: 0.26, tropismo: 0.075, ponta: 0.18,
-        filhos: { qtd: 6, de: 0.2, ate: 1.0, ang: 40, angVar: 14, comp: 0.5, raio: 0.6 } },
-      { segs: 6, radial: 6, curva: 0.36, tropismo: 0.03, ponta: 0.22,
-        filhos: { qtd: 6, de: 0.15, ate: 1.0, ang: 44, angVar: 16, comp: 0.45, raio: 0.58 } },
-      { segs: 3, radial: 4, curva: 0.45, tropismo: 0.0, ponta: 0.35 },
+      { segs: 10, radial: 8, curva: 0.05, tropismo: 0.05, ponta: 0.05,
+        filhos: { qtd: 22, de: 0.12, ate: 0.95, ang: 72, angVar: 12, comp: 0.36, raio: 0.45, perfil: 'conico', verticilo: 4 } },
+      { segs: 4, radial: 4, curva: 0.15, tropismo: -0.01, ponta: 0.2 },
     ],
-    folhas: { densidade: { 2: 2.0, 3: 11 }, inicio: 0.25, tamanho: 0.52, modo: 'cacho', subir: 0.65 },
-  },
-  abeto: {
-    casca: 'escamosa', folha: 'agulha', tronco: [20, 25], raio: [0.3, 0.38],
-    raizes: 6, sapata: 0.4, lodNivelMax: [9, 1, 0],
-    niveis: [
-      { segs: 26, radial: 18, curva: 0.035, tropismo: 0.05, ponta: 0.03,
-        filhos: { qtd: 52, de: 0.17, ate: 0.97, ang: 86, angVar: 10, comp: 0.25, raio: 0.3, perfil: 'conico', verticilo: 4 } },
-      { segs: 8, radial: 6, curva: 0.16, tropismo: -0.03, ponta: 0.1,
-        filhos: { qtd: 12, de: 0.1, ate: 0.95, ang: 52, angVar: 10, comp: 0.3, raio: 0.5, plano: true } },
-      { segs: 3, radial: 3, curva: 0.2, tropismo: 0.0, ponta: 0.3 },
-    ],
-    folhas: { densidade: { 1: 2.6, 2: 8.5 }, inicio: 0.0, tamanho: 0.5, modo: 'ramo', secoAte: 0.3 },
-  },
-  muda: {
-    casca: 'lisa', folha: 'faia', tronco: [2.4, 3.6], raio: [0.035, 0.055],
-    raizes: 0, sapata: 0.15,
-    niveis: [
-      { segs: 8, radial: 8, curva: 0.18, tropismo: 0.03, ponta: 0.2,
-        filhos: { qtd: 7, de: 0.3, ate: 1.0, ang: 52, angVar: 14, comp: 0.46, raio: 0.65, perfil: 'decorrente' } },
-      { segs: 5, radial: 5, curva: 0.35, tropismo: 0.04, ponta: 0.25,
-        filhos: { qtd: 5, de: 0.15, ate: 1.0, ang: 46, angVar: 16, comp: 0.45, raio: 0.6 } },
-      { segs: 3, radial: 3, curva: 0.4, tropismo: 0.0, ponta: 0.35 },
-    ],
-    folhas: { densidade: { 1: 3.5, 2: 13 }, inicio: 0.2, tamanho: 0.3, modo: 'cacho', subir: 0.6 },
-  },
-  morta: {
-    casca: 'sulcada', folha: null, tronco: [8, 11], raio: [0.3, 0.42],
-    raizes: 6, sapata: 0.5, quebrada: true,
-    niveis: [
-      { segs: 16, radial: 22, curva: 0.16, tropismo: 0.02, ponta: 0.55,
-        filhos: { qtd: 6, de: 0.35, ate: 0.95, ang: 55, angVar: 18, comp: 0.5, raio: 0.55, perfil: 'decorrente' } },
-      { segs: 9, radial: 10, curva: 0.4, tropismo: 0.03, ponta: 0.25,
-        filhos: { qtd: 4, de: 0.2, ate: 0.9, ang: 48, angVar: 18, comp: 0.45, raio: 0.6 } },
-      { segs: 5, radial: 5, curva: 0.5, tropismo: -0.01, ponta: 0.3 },
-    ],
-    folhas: null,
+    folhas: { densidade: { 1: 4.2 }, inicio: 0.1, tamanho: 0.62, modo: 'placa', topo: 3 },
   },
 };
 
@@ -206,8 +165,19 @@ export function gerarArvore(nomeEspecie, semente) {
 
   crescer(0, [0, -0.6, 0], v3.norm([(R() - 0.5) * 0.06, 1, (R() - 0.5) * 0.06]), comp0 + 0.6, raio0, { w1: 0, f1: 0, w2: 0, f2: 0 });
 
-  // galhos de árvore morta: os de cima quebrados (pontas grossas, curtas)
-  if (esp.quebrada) for (const r of ramos) if (r.nivel > 0 && R() < 0.35) r.pts.length = Math.max(2, Math.ceil(r.pts.length * (0.4 + R() * 0.4)));
+  // ponta do cone: placas em pé em volta do topo do tronco
+  if (esp.folhas && esp.folhas.topo) {
+    const tronco = ramos[0];
+    const ponta = tronco.pts[tronco.pts.length - 1].p;
+    for (let k = 0; k < esp.folhas.topo; k++) {
+      const tam = esp.folhas.tamanho * (0.7 + R() * 0.3);
+      const ang = (k / esp.folhas.topo) * Math.PI * 2 + R() * 0.5;
+      const eixo = v3.norm([Math.cos(ang) * 0.25, 1, Math.sin(ang) * 0.25]);
+      const lado = v3.norm(v3.cross(eixo, [Math.cos(ang + 1.57), 0, Math.sin(ang + 1.57)]));
+      const nor = v3.norm(v3.cross(lado, eixo));
+      cartoes.push({ p: v3.add(ponta, [0, -tam * 0.75, 0]), eixo, lado, nor, tam, celula: Math.floor(R() * 4), w1: 0, w2: 0, f1: 0, f2: R() * 6.283, fase: R() * 6.283 });
+    }
+  }
 
   // limites e copa
   let ymax = 0;
@@ -244,6 +214,22 @@ function pontoEm(pts, t) {
 function fazerCartao(pp, fo, R, nivel) {
   const tam = fo.tamanho * (0.75 + R() * 0.5) * (nivel < 2 && fo.modo === 'cacho' ? 1.15 : 1);
   const fora = v3.norm([pp.p[0] + (R() - 0.5) * 0.3, 0.0001, pp.p[2] + (R() - 0.5) * 0.3]);
+  if (fo.modo === 'placa') {
+    // segue o galho, caída um pouco, girada em volta dele: umas deitadas,
+    // outras de lado, para a copa ficar cheia vista de baixo e de lado
+    const eixo = v3.norm(v3.add(pp.d, [(R() - 0.5) * 0.35, -0.12 + (R() - 0.5) * 0.2, (R() - 0.5) * 0.35]));
+    let lado = v3.cross(eixo, [0, 1, 0]);
+    lado = v3.len(lado) < 1e-3 ? [1, 0, 0] : v3.norm(lado);
+    let nor = v3.norm(v3.cross(lado, eixo));
+    if (nor[1] < 0) nor = v3.mul(nor, -1);
+    const giro = (R() - 0.5) * 2.4;
+    nor = girar(nor, eixo, giro);
+    lado = v3.norm(v3.cross(eixo, nor));
+    return {
+      p: pp.p, eixo, lado, nor, tam,
+      celula: Math.floor(R() * 4), w1: pp.w1, w2: pp.w2, fase: R() * 6.283,
+    };
+  }
   let eixo;
   if (fo.modo === 'ramo') {
     // agulhas: o cartão segue o graveto, quase deitado

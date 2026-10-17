@@ -18,79 +18,46 @@ function fechar(g) {
 }
 const norm = (a) => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; };
 
-export function formaCapim(semente) {
+// Cartões cruzados: n planos em pé girados em volta do centro, cada um com
+// meia textura (duas variações lado a lado). Três linhas de vértices para o
+// vento poder curvar a planta, não só inclinar.
+function formaCruzada(semente, { n, larg, alt, vento }) {
   const R = rng(semente);
   const g = novo();
-  const nLaminas = 16 + Math.floor(R() * 10);
-  const segs = 4;
-  for (let k = 0; k < nLaminas; k++) {
-    const ang = R() * Math.PI * 2;
-    const r0 = R() * 0.07;
-    const base = [Math.cos(ang) * r0, 0, Math.sin(ang) * r0];
-    const alt = 0.22 + R() * 0.38;
-    const larg = 0.008 + R() * 0.008;
-    const curva = 0.15 + R() * 0.35;
-    const dir = [Math.cos(ang + (R() - 0.5)), 0, Math.sin(ang + (R() - 0.5))];
-    const lado = [-dir[2], 0, dir[0]];
+  const metade = R() < 0.5 ? 0 : 0.5;
+  const giro0 = R() * Math.PI;
+  for (let k = 0; k < n; k++) {
+    const a = giro0 + (k / n) * Math.PI + (R() - 0.5) * 0.3;
+    const d = [Math.cos(a), 0, Math.sin(a)];
+    const nq = [-d[2], 0, d[0]];
     const fase = R() * 6.283;
+    const w = larg * (0.85 + R() * 0.3), h = alt * (0.85 + R() * 0.3);
     const i0 = g.pos.length / 3;
-    for (let s = 0; s <= segs; s++) {
-      const t = s / segs;
-      const curv = curva * t * t * alt;
-      const c = [base[0] + dir[0] * curv, t * alt * (1 - 0.15 * t * curva), base[2] + dir[2] * curv];
-      const w = larg * (1 - t * 0.92);
-      const n = norm([dir[0] * 0.3, 1, dir[2] * 0.3]);
-      const ao = 0.35 + 0.65 * t;
-      for (const sd of [-1, 1]) {
-        vert(g, [c[0] + lado[0] * w * sd, c[1], c[2] + lado[2] * w * sd], n, 0, t, ao, 0, [0, 0, t * alt * 1.6, fase], [t * alt * 0.4, fase]);
+    for (let row = 0; row <= 2; row++) {
+      const v = row / 2;
+      // a parte de cima abre um pouco para fora, como planta de verdade
+      const abre = 1 + v * 0.12;
+      for (const col of [0, 1]) {
+        const x = (col - 0.5) * w * abre;
+        const nrm = norm([nq[0] * 0.35, 1, nq[2] * 0.35]);
+        vert(g, [d[0] * x, v * h, d[2] * x], nrm, metade + col * 0.5, v, 0.4 + 0.6 * v, 0,
+          [0, 0, v * h * vento, fase], [v * 0.05, fase]);
       }
     }
-    for (let s = 0; s < segs; s++) {
-      const a = i0 + s * 2;
-      g.idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+    for (let row = 0; row < 2; row++) {
+      const a0 = i0 + row * 2;
+      g.idx.push(a0, a0 + 1, a0 + 2, a0 + 1, a0 + 3, a0 + 2);
     }
   }
   return fechar(g);
 }
 
+export function formaCapim(semente) {
+  return formaCruzada(semente, { n: 3, larg: 0.62, alt: 0.42, vento: 1.4 });
+}
+
 export function formaSamambaia(semente) {
-  const R = rng(semente);
-  const g = novo();
-  const nFr = 9 + Math.floor(R() * 7);
-  const segs = 10;
-  const escala = 0.75 + R() * 0.55;
-  for (let k = 0; k < nFr; k++) {
-    const az = (k / nFr) * Math.PI * 2 + (R() - 0.5) * 0.5;
-    const comp = (0.75 + R() * 0.45) * escala;
-    const larg = comp * (0.26 + R() * 0.06);
-    let elev = (50 + R() * 25) * Math.PI / 180;
-    const h = [Math.cos(az), 0, Math.sin(az)];
-    const lado = [-h[2], 0, h[0]];
-    const metade = R() < 0.5 ? 0 : 0.5;
-    const fase = R() * 6.283;
-    let p = [h[0] * 0.03, 0, h[2] * 0.03];
-    const i0 = g.pos.length / 3;
-    for (let s = 0; s <= segs; s++) {
-      const t = s / segs;
-      const dir = [h[0] * Math.cos(elev), Math.sin(elev), h[2] * Math.cos(elev)];
-      const w = larg * 0.5;
-      const nF = norm([-h[0] * Math.sin(elev), Math.cos(elev), -h[2] * Math.sin(elev)]);
-      const ao = 0.4 + 0.6 * Math.min(1, t * 1.5);
-      const vento = [0, 0, t * comp * 1.3, fase];
-      const fl = [t * 0.12, fase];
-      const dobra = w * 0.35;
-      vert(g, [p[0] - lado[0] * w, p[1] - dobra, p[2] - lado[2] * w], norm([nF[0] - lado[0] * 0.3, nF[1], nF[2] - lado[2] * 0.3]), metade, t, ao, 0, vento, fl);
-      vert(g, p, nF, metade + 0.25, t, ao, 0, vento, fl);
-      vert(g, [p[0] + lado[0] * w, p[1] - dobra, p[2] + lado[2] * w], norm([nF[0] + lado[0] * 0.3, nF[1], nF[2] + lado[2] * 0.3]), metade + 0.5, t, ao, 0, vento, fl);
-      p = [p[0] + dir[0] * comp / segs, p[1] + dir[1] * comp / segs, p[2] + dir[2] * comp / segs];
-      elev -= (0.22 + 0.1 * t) * (1 + R() * 0.2);
-    }
-    for (let s = 0; s < segs; s++) {
-      const a = i0 + s * 3;
-      g.idx.push(a, a + 3, a + 1, a + 1, a + 3, a + 4, a + 1, a + 4, a + 2, a + 2, a + 4, a + 5);
-    }
-  }
-  return fechar(g);
+  return formaCruzada(semente, { n: 3, larg: 1.35, alt: 0.72, vento: 0.9 });
 }
 
 // Pedra: icosaedro subdividido, deformado por ruído, com base achatada.

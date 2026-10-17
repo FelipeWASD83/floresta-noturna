@@ -54,13 +54,13 @@ test('toda espécie gera árvore com malha válida nos três níveis de detalhe'
       assert.ok(tri <= triAnt, `${esp}: nível ${l} mais pesado que o anterior`);
       triAnt = tri;
     }
-    if (ESPECIES[esp].folhas) assert.ok(arv.cartoes.length > 100, `${esp}: poucas folhas`);
+    if (ESPECIES[esp].folhas) assert.ok(arv.cartoes.length > 40, `${esp}: poucas placas de agulha`);
   }
 });
 
 test('folha e galho do mesmo ponto recebem o mesmo peso de vento (balançam juntos)', () => {
-  const arv = gerarArvore('carvalho', 2);
-  const ramos = arv.ramos.filter((r) => r.nivel === 3);
+  const arv = gerarArvore('pinheiro', 2);
+  const ramos = arv.ramos;
   const fasesGalho = new Set(ramos.map((r) => r.f1));
   const fora = arv.cartoes.filter((c) => !fasesGalho.has(c.f1));
   assert.equal(fora.length, 0, 'cartão com fase de galho que não existe');

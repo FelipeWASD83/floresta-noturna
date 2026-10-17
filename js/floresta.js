@@ -62,49 +62,107 @@ export function texturaAlturas() {
 }
 
 const MODELOS_ARVORE = [
-  { especie: 'carvalho', semente: 1 }, { especie: 'carvalho', semente: 2 },
-  { especie: 'faia', semente: 3 }, { especie: 'faia', semente: 4 },
-  { especie: 'abeto', semente: 5 }, { especie: 'abeto', semente: 6 },
-  { especie: 'muda', semente: 7 }, { especie: 'muda', semente: 8 },
-  { especie: 'morta', semente: 9 },
+  { especie: 'pinheiro', semente: 1 }, { especie: 'pinheiro', semente: 2 }, { especie: 'pinheiro', semente: 3 },
+  { especie: 'pinheirinho', semente: 4 }, { especie: 'pinheirinho', semente: 5 },
 ];
 
-export async function criarFloresta(cena, tex, progresso) {
+// De longe o pinheiro vira um cartão: dois planos cruzados com a "foto" da
+// árvore inteira, tirada uma vez na hora de carregar.
+function cartaoDeLonge(renderer, malha, tex) {
+  const cena = new THREE.Scene();
+  const soAO = (m) => {
+    m.onBeforeCompile = (sh) => {
+      sh.fragmentShader = sh.fragmentShader.replace('#include <color_fragment>', 'diffuseColor.rgb *= vColor.r;');
+    };
+    return m;
+  };
+  const gc = geometria(malha.casca), gf = geometria(malha.folhas);
+  cena.add(new THREE.Mesh(gc, soAO(new THREE.MeshBasicMaterial({ map: tex.cascas.escamosa.cor, color: new THREE.Color(0.75, 0.68, 0.62), vertexColors: true }))));
+  cena.add(new THREE.Mesh(gf, soAO(new THREE.MeshBasicMaterial({ map: tex.agulhas, alphaTest: 0.5, side: THREE.DoubleSide, vertexColors: true }))));
+  gc.computeBoundingBox(); gf.computeBoundingBox();
+  const caixa = gc.boundingBox.clone().union(gf.boundingBox);
+  const raio = Math.max(Math.abs(caixa.min.x), caixa.max.x, Math.abs(caixa.min.z), caixa.max.z) * 1.04;
+  const y0 = Math.max(caixa.min.y, -0.3), y1 = caixa.max.y * 1.02;
+  // a textura é 1 x 2; o enquadramento abre no lado que sobrar
+  let larg = raio * 2, alt = y1 - y0;
+  if (larg * 2 > alt) alt = larg * 2; else larg = alt / 2;
+  const cam = new THREE.OrthographicCamera(-larg / 2, larg / 2, y0 + alt, y0, 0.1, 200);
+  cam.position.set(0, 0, 100);
+  cam.lookAt(0, 0, 0);
+  const rt = new THREE.WebGLRenderTarget(512, 1024, { generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter, magFilter: THREE.LinearFilter, depthBuffer: true });
+  rt.texture.colorSpace = THREE.SRGBColorSpace;
+  rt.texture.anisotropy = 8;
+  const corAntes = renderer.getClearColor(new THREE.Color()), alfaAntes = renderer.getClearAlpha();
+  renderer.setRenderTarget(rt);
+  renderer.setClearColor(new THREE.Color(0.02, 0.05, 0.03), 0);
+  renderer.clear();
+  renderer.render(cena, cam);
+  renderer.setRenderTarget(null);
+  renderer.setClearColor(corAntes, alfaAntes);
+  gc.dispose(); gf.dispose();
+
+  // dois planos cruzados do mesmo tamanho do enquadramento
+  const pos = [], nor = [], uv = [], cor = [], vento = [], dobra = [], folha = [], idx = [];
+  const H = y1;
+  for (const a of [0, Math.PI / 2]) {
+    const d = [Math.cos(a), 0, Math.sin(a)], nq = [-d[2], 0, d[0]];
+    const i0 = pos.length / 3;
+    for (let row = 0; row <= 4; row++) {
+      const v = row / 4, y = y0 + v * alt;
+      for (const col of [0, 1]) {
+        const x = (col - 0.5) * larg;
+        pos.push(d[0] * x, y, d[2] * x);
+        const l = Math.hypot(nq[0] * 0.5, 1, nq[2] * 0.5);
+        nor.push(nq[0] * 0.5 / l, 1 / l, nq[2] * 0.5 / l);
+        uv.push(col, v); cor.push(0.85, 0, 1); vento.push(0, 0, 0, 0);
+        const h = Math.max(y, 0) / H; dobra.push(h * h * H * 0.022); folha.push(0, 0);
+      }
+    }
+    for (let row = 0; row < 4; row++) { const b = i0 + row * 2; idx.push(b, b + 1, b + 2, b + 1, b + 3, b + 2); }
+  }
+  const geo = geometria({
+    position: new Float32Array(pos), normal: new Float32Array(nor), uv: new Float32Array(uv), color: new Float32Array(cor),
+    aVento: new Float32Array(vento), aDobra: new Float32Array(dobra), aFolha: new Float32Array(folha), index: new Uint16Array(idx),
+  });
+  return { geo, mat: materialFolha(rt.texture, { translucidez: 0.35 }) };
+}
+
+export async function criarFloresta(cena, tex, progresso, renderer) {
   const mats = {
     casca: {
       sulcada: materialCasca(tex.cascas.sulcada),
-      lisa: materialCasca(tex.cascas.lisa),
       escamosa: materialCasca(tex.cascas.escamosa),
     },
-    folha: {
-      carvalho: materialFolha(tex.folhaCarvalho, { translucidez: 1.1 }),
-      faia: materialFolha(tex.folhaFaia, { translucidez: 1.2 }),
-      agulha: materialFolha(tex.agulhas, { translucidez: 0.5 }),
-    },
+    folha: { agulha: materialFolha(tex.agulhas, { translucidez: 0.55 }) },
   };
-  mats.casca.lisa.mat.color.setRGB(0.95, 0.95, 0.95);
   mats.casca.escamosa.mat.color.setRGB(1.05, 0.95, 0.9);
 
-  // modelos de árvore, cada um em três níveis de detalhe
+  // pinheiro: cheio até 30 m, leve até 75 m, cartão depois. Sombra da lua com
+  // o cheio até 26 m e o leve até 95 m; da tocha, só o tronco (menos nos
+  // pinheirinhos, cujas placas ficam na altura da tocha)
   const modelos = [];
   const infos = [];
   for (const def of MODELOS_ARVORE) {
     const arv = gerarArvore(def.especie, def.semente);
     infos.push(arv);
-    const muda = def.especie === 'muda';
-    const dists = muda ? [26, 60, 110] : [32, 78, 210];
-    // sombra: da lua, detalhe cheio até 30 m e o modelo leve até 95 m; da
-    // tocha, o tronco simplificado (folha alta não faz sombra que se veja),
-    // menos nas mudas, cujas folhas ficam na altura da tocha
-    const sombras = muda
-      ? [{ lua: [0, 25], tocha: [0, 10] }, {}, { lua: [25, 60] }]
-      : [{ lua: [0, 26] }, { tocha: [0, 32] }, { lua: [26, 95] }];
-    const lods = [0, 1, 2].map((l) => {
-      const m = montarMalha(arv, l);
-      const partes = [{ geo: geometria(m.casca), mat: mats.casca[arv.esp.casca], lua: true, tocha: true }];
-      if (m.folhas) partes.push({ geo: geometria(m.folhas), mat: mats.folha[arv.esp.folha], lua: true, tocha: muda });
-      return { dist: dists[l], ...sombras[l], partes };
+    const pequeno = def.especie === 'pinheirinho';
+    const dists = pequeno ? [24, 55, 130] : [30, 75, 260];
+    const sombras = pequeno
+      ? [{ lua: [0, 22], tocha: [0, 10] }, { lua: [22, 55] }, {}]
+      : [{ lua: [0, 26] }, { lua: [26, 95], tocha: [0, 32] }, {}];
+    const cheia = montarMalha(arv, 0);
+    const lods = [0, 1].map((l) => {
+      const m = l === 0 ? cheia : montarMalha(arv, l);
+      return {
+        dist: dists[l], ...sombras[l],
+        partes: [
+          { geo: geometria(m.casca), mat: mats.casca[arv.esp.casca], lua: true, tocha: true },
+          { geo: geometria(m.folhas), mat: mats.folha[arv.esp.folha], lua: true, tocha: pequeno },
+        ],
+      };
     });
+    const longe = cartaoDeLonge(renderer, cheia, tex);
+    lods.push({ dist: dists[2], ...sombras[2], partes: [{ geo: longe.geo, mat: longe.mat }] });
     modelos.push({ lods });
     await progresso();
   }
@@ -122,12 +180,7 @@ export async function criarFloresta(cena, tex, progresso) {
       if (r0 < 10.5) continue;
       const densidade = fbm2(x / 60 + 3, z / 60 + 8, { oitavas: 3, semente: 91 });
       if (R() > 0.55 + densidade * 0.7) continue;
-      const conifera = fbm2(x / 90 + 11, z / 90 + 4, { oitavas: 3, semente: 93 });
-      let mi;
-      const s = R();
-      if (s < 0.045) mi = 8;
-      else if (R() < Math.min(0.85, Math.max(0.1, (conifera - 0.42) * 4))) mi = 4 + (R() < 0.5 ? 0 : 1);
-      else mi = R() < 0.55 ? (R() < 0.5 ? 0 : 1) : (R() < 0.5 ? 2 : 3);
+      const mi = Math.floor(R() * 3);
       const arv = infos[mi];
       const esc = 0.8 + R() * 0.42;
       const y = altura(x, z) - 0.05;
@@ -136,13 +189,13 @@ export async function criarFloresta(cena, tex, progresso) {
       obst.push({ tipo: 'circulo', x, z, r: arv.raioTronco * esc * 1.15 + 0.05, topo: Infinity });
     }
   }
-  // mudas no meio do caminho (ficam na altura do rosto)
+  // pinheirinhos no meio do caminho (ficam na altura do rosto)
   for (let k = 0; k < 2600; k++) {
     const x = (R() - 0.5) * 2 * limite, z = (R() - 0.5) * 2 * limite;
     const r0 = Math.hypot(x, z);
     if (r0 < 6) continue;
     if (fbm2(x / 30, z / 30, { oitavas: 2, semente: 95 }) < 0.45) continue;
-    const mi = 6 + (R() < 0.5 ? 0 : 1);
+    const mi = 3 + (R() < 0.5 ? 0 : 1);
     const arv = infos[mi];
     const esc = 0.65 + R() * 0.7;
     const y = altura(x, z) - 0.03;
@@ -187,7 +240,7 @@ function criarVegetacao(cena, tex, mats, obst) {
 
   // samambaias
   const matSam = materialFolha(tex.samambaia, { translucidez: 1.3 });
-  const matCapim = materialFolha(null, { semMapa: true, translucidez: 0.8, tom: new THREE.Color(0.32, 0.36, 0.17) });
+  const matCapim = materialFolha(tex.grama, { translucidez: 0.9 });
   const modelos = [];
   for (let s = 0; s < 4; s++) {
     modelos.push({ lods: [{ dist: 48, lua: [0, 40], tocha: [0, 9], partes: [{ geo: geometria(formaSamambaia(1000 + s)), mat: matSam, lua: true, tocha: true }] }] });

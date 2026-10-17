@@ -211,66 +211,8 @@ function desenharFolha(ctx, x, y, ang, len, larg, tipo, cor, R, { nervuras = tru
   ctx.restore();
 }
 
-function corVerde(R, tipo) {
-  if (tipo === 'carvalho') return { h: 88 + R() * 18, s: 38 + R() * 18, l: 20 + R() * 9 };
-  return { h: 82 + R() * 20, s: 42 + R() * 18, l: 23 + R() * 9 };
-}
-
-// Atlas 2x2: cada célula é um raminho com várias folhas, nascendo do meio de
-// baixo (onde o cartão encosta no graveto).
-export function gerarAtlasFolhas(tipo) {
-  const S = 2048, C = S / 2;
-  const cv = document.createElement('canvas');
-  cv.width = cv.height = S;
-  const ctx = cv.getContext('2d');
-  const R = rng(tipo === 'carvalho' ? 101 : 202);
-  for (let cel = 0; cel < 4; cel++) {
-    const ox = (cel % 2) * C;
-    const oy = (1 - Math.floor(cel / 2)) * C; // v da UV cresce para cima
-    ctx.save();
-    ctx.beginPath(); ctx.rect(ox, oy, C, C); ctx.clip();
-    ctx.translate(ox, oy);
-    // graveto
-    const topo = [C * 0.5 + (R() - 0.5) * C * 0.25, C * 0.12];
-    const meio = [C * 0.5 + (R() - 0.5) * C * 0.2, C * 0.55];
-    const ponto = (t) => {
-      const a = [C * 0.5, C], u = 1 - t;
-      return [u * u * a[0] + 2 * u * t * meio[0] + t * t * topo[0], u * u * a[1] + 2 * u * t * meio[1] + t * t * topo[1]];
-    };
-    const folhasCel = [];
-    const nF = tipo === 'carvalho' ? 7 + Math.floor(R() * 4) : 8 + Math.floor(R() * 5);
-    for (let k = 0; k < nF; k++) {
-      const t = 0.12 + 0.86 * (k + R() * 0.5) / nF;
-      const [px, py] = ponto(t);
-      const [qx, qy] = ponto(Math.min(1, t + 0.02));
-      const dirAng = Math.atan2(qy - py, qx - px);
-      const lado = k % 2 === 0 ? 1 : -1;
-      const ang = dirAng + lado * (0.6 + R() * 0.7);
-      const len = (tipo === 'carvalho' ? C * 0.3 : C * 0.26) * (0.7 + R() * 0.5) * (1 - t * 0.25);
-      folhasCel.push({ px, py, ang, len, larg: len * (tipo === 'carvalho' ? 0.34 : 0.32), cor: corVerde(R, tipo) });
-    }
-    // folha da ponta
-    const [tx, ty] = ponto(1);
-    folhasCel.push({ px: tx, py: ty, ang: -Math.PI / 2 + (R() - 0.5) * 0.4, len: C * 0.26, larg: C * 0.085, cor: corVerde(R, tipo) });
-    // de trás para frente: as de baixo primeiro
-    folhasCel.sort(() => R() - 0.5);
-    ctx.lineCap = 'round';
-    ctx.strokeStyle = '#3b2e1d';
-    ctx.lineWidth = C * 0.012;
-    ctx.beginPath(); ctx.moveTo(C * 0.5, C); ctx.quadraticCurveTo(meio[0], meio[1], topo[0], topo[1]); ctx.stroke();
-    for (const f of folhasCel) {
-      // pecíolo
-      const pl = f.len * 0.08;
-      ctx.strokeStyle = '#4b4226';
-      ctx.lineWidth = C * 0.005;
-      ctx.beginPath(); ctx.moveTo(f.px, f.py); ctx.lineTo(f.px + Math.cos(f.ang) * pl, f.py + Math.sin(f.ang) * pl); ctx.stroke();
-      desenharFolha(ctx, f.px + Math.cos(f.ang) * pl, f.py + Math.sin(f.ang) * pl, f.ang, f.len, f.larg, tipo, f.cor, R);
-    }
-    ctx.restore();
-  }
-  return recorte(cv, tipo === 'carvalho' ? [52, 64, 30] : [56, 70, 32]);
-}
-
+// Placa de pinheiro: um ramo em leque, eixo do meio de baixo até em cima,
+// raminhos dos dois lados e agulhas bem cheias. Atlas 2x2 (quatro variações).
 export function gerarAtlasAgulhas() {
   const S = 2048, C = S / 2;
   const cv = document.createElement('canvas');
@@ -278,22 +220,20 @@ export function gerarAtlasAgulhas() {
   const ctx = cv.getContext('2d');
   const R = rng(303);
   ctx.lineCap = 'round';
-  const raminho = (x0, y0, x1, y1, esp, nAg, compAg, tom) => {
-    ctx.strokeStyle = '#3a2a1c';
-    ctx.lineWidth = esp;
-    ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
-    const dx = x1 - x0, dy = y1 - y0, l = Math.hypot(dx, dy);
-    const ux = dx / l, uy = dy / l;
-    for (let k = 0; k < nAg; k++) {
-      const t = k / nAg;
+  const agulhas = (x0, y0, x1, y1, n, comp, tom, espessura) => {
+    const dx = x1 - x0, dy = y1 - y0;
+    const base = Math.atan2(dy, dx);
+    for (let k = 0; k < n; k++) {
+      const t = k / n;
       const px = x0 + dx * t, py = y0 + dy * t;
-      const lado = k % 2 === 0 ? 1 : -1;
-      const ang = Math.atan2(uy, ux) + lado * (0.75 + R() * 0.5);
-      const cl = compAg * (0.75 + R() * 0.45) * (t > 0.85 ? (1 - t) / 0.15 * 0.6 + 0.4 : 1);
-      const l2 = tom.l + (R() - 0.5) * 8 + (t > 0.8 ? 6 : 0);
-      ctx.strokeStyle = `hsl(${tom.h + (R() - 0.5) * 10} ${tom.s}% ${l2}%)`;
-      ctx.lineWidth = 2.6 + R() * 1.2;
-      ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px + Math.cos(ang) * cl, py + Math.sin(ang) * cl); ctx.stroke();
+      for (const lado of [-1, 1]) {
+        const ang = base + lado * (0.55 + R() * 0.45);
+        const cl = comp * (0.7 + R() * 0.5) * (t > 0.8 ? 0.55 + (1 - t) * 2.2 : 1);
+        const ponta = t > 0.75 ? 10 : 0;
+        ctx.strokeStyle = `hsl(${tom.h + (R() - 0.5) * 14} ${tom.s + ponta}% ${tom.l + (R() - 0.5) * 8 + ponta}%)`;
+        ctx.lineWidth = espessura * (0.8 + R() * 0.4);
+        ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px + Math.cos(ang) * cl, py + Math.sin(ang) * cl); ctx.stroke();
+      }
     }
   };
   for (let cel = 0; cel < 4; cel++) {
@@ -301,69 +241,142 @@ export function gerarAtlasAgulhas() {
     ctx.save();
     ctx.beginPath(); ctx.rect(ox, oy, C, C); ctx.clip();
     ctx.translate(ox, oy);
-    const tom = { h: 140 + R() * 20, s: 28 + R() * 10, l: 17 + R() * 6 };
-    const topoX = C * 0.5 + (R() - 0.5) * C * 0.15;
-    // eixo principal + 4 a 6 raminhos laterais
-    const nLat = 4 + Math.floor(R() * 3);
+    const tom = { h: 138 + R() * 14, s: 36 + R() * 10, l: 21 + R() * 6 };
+    const topoX = C * 0.5 + (R() - 0.5) * C * 0.1;
+    const ponto = (t) => [C * 0.5 + (topoX - C * 0.5) * t + Math.sin(t * 3.1) * C * 0.02, C - t * C * 0.93];
+    // raminhos: do fundo para a frente, em leque
+    const nLat = 14 + Math.floor(R() * 5);
+    const lats = [];
     for (let k = 0; k < nLat; k++) {
-      const t = 0.2 + 0.7 * k / nLat;
-      const bx = C * 0.5 + (topoX - C * 0.5) * t, by = C - t * C * 0.88;
-      const s = k % 2 === 0 ? 1 : -1;
-      const comp = C * (0.32 - t * 0.12) * (0.8 + R() * 0.4);
-      const ang = -Math.PI / 2 + s * (0.7 + R() * 0.35);
-      raminho(bx, by, bx + Math.cos(ang) * comp, by + Math.sin(ang) * comp, C * 0.006, 60, C * 0.05, tom);
+      const t = 0.04 + 0.9 * (k + R() * 0.4) / nLat;
+      for (const lado of [-1, 1]) {
+        const comp = C * 0.44 * Math.pow(Math.sin(Math.PI * Math.min(1, Math.pow(t, 0.75))), 0.9) * (0.8 + R() * 0.35);
+        const ang = -Math.PI / 2 + lado * (0.75 + R() * 0.35 + t * 0.25);
+        lats.push({ t, comp, ang, z: R() });
+      }
     }
-    raminho(C * 0.5, C, topoX, C * 0.08, C * 0.009, 140, C * 0.058, tom);
+    lats.sort((a, b) => a.z - b.z);
+    for (const l of lats) {
+      const [bx, by] = ponto(l.t);
+      const ex = bx + Math.cos(l.ang) * l.comp, ey = by + Math.sin(l.ang) * l.comp + l.comp * 0.12;
+      ctx.strokeStyle = '#3b2b1c';
+      ctx.lineWidth = C * 0.004;
+      ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(ex, ey); ctx.stroke();
+      const escuro = { ...tom, l: tom.l - 4 + l.z * 7 };
+      agulhas(bx, by, ex, ey, Math.max(8, Math.round(l.comp / (C * 0.011))), C * 0.05, escuro, 3.2);
+    }
+    // eixo do meio por cima
+    ctx.strokeStyle = '#3f2d1c';
+    ctx.lineWidth = C * 0.009;
+    ctx.beginPath();
+    for (let i = 0; i <= 20; i++) { const [x, y] = ponto(i / 20); if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y); }
+    ctx.stroke();
+    for (let i = 0; i < 20; i++) {
+      const [ax, ay] = ponto(i / 20), [bx, by] = ponto((i + 1) / 20);
+      agulhas(ax, ay, bx, by, 9, C * 0.055, tom, 3.4);
+    }
     ctx.restore();
   }
-  return recorte(cv, [30, 50, 40]);
+  return recorte(cv, [30, 52, 38]);
 }
 
-// Samambaia: duas frondes lado a lado, cada uma ocupando meia largura.
+// Touceira de grama: duas variações lado a lado, lâminas com degradê do pé
+// escuro para a ponta clara.
+export function gerarGrama() {
+  const W = 1024, H = 512;
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+  const R = rng(909);
+  for (let v = 0; v < 2; v++) {
+    const ox = v * W / 2, L = W / 2;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(ox, 0, L, H); ctx.clip();
+    ctx.translate(ox, 0);
+    const laminas = [];
+    for (let k = 0; k < 75; k++) laminas.push({ z: R() });
+    laminas.sort((a, b) => a.z - b.z);
+    for (const lam of laminas) {
+      const bx = L * (0.12 + R() * 0.76);
+      const alt = H * (0.4 + R() * 0.55) * (1 - Math.abs(bx / L - 0.5) * 0.7);
+      const curva = (bx / L - 0.5) * L * 0.5 + (R() - 0.5) * L * 0.25;
+      const larg = 5 + R() * 9;
+      const seca = R() < 0.12;
+      const g = ctx.createLinearGradient(0, H, 0, H - alt);
+      g.addColorStop(0, `hsl(${seca ? 50 : 88} 35% ${8 + lam.z * 4}%)`);
+      g.addColorStop(1, seca ? `hsl(${45 + R() * 10} 40% ${32 + R() * 10}%)` : `hsl(${82 + R() * 18} ${42 + R() * 15}% ${26 + R() * 14 + lam.z * 6}%)`);
+      ctx.fillStyle = g;
+      const tx = bx + curva, ty = H - alt;
+      const cx = bx + curva * 0.15, cy = H - alt * 0.55;
+      ctx.beginPath();
+      ctx.moveTo(bx - larg / 2, H);
+      ctx.quadraticCurveTo(cx - larg * 0.35, cy, tx, ty);
+      ctx.quadraticCurveTo(cx + larg * 0.35, cy, bx + larg / 2, H);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+  return recorte(cv, [40, 52, 22]);
+}
+
+// Samambaia inteira (uma touceira de frondes em arco), duas variações.
 export function gerarSamambaia() {
-  const W = 1024, H = 1024;
+  const W = 1024, H = 512;
   const cv = document.createElement('canvas');
   cv.width = W; cv.height = H;
   const ctx = cv.getContext('2d');
   const R = rng(404);
   ctx.lineCap = 'round';
-  for (let f = 0; f < 2; f++) {
-    const ox = f * W / 2, cx = W / 4;
+  for (let v = 0; v < 2; v++) {
+    const ox = v * W / 2, L = W / 2;
     ctx.save();
-    ctx.beginPath(); ctx.rect(ox, 0, W / 2, H); ctx.clip();
+    ctx.beginPath(); ctx.rect(ox, 0, L, H); ctx.clip();
     ctx.translate(ox, 0);
-    const tom = { h: 92 + R() * 16, s: 42 + R() * 12, l: 21 + R() * 6 };
-    const nP = 26;
-    for (let k = 0; k < nP; k++) {
-      const t = 0.06 + 0.92 * k / nP;
-      const y = H - t * H;
-      const comp = (W / 4) * 0.95 * Math.pow(Math.sin(Math.PI * Math.min(1, Math.pow(t, 0.75) * 1.02)), 0.9);
-      for (const s of [-1, 1]) {
-        const ang = s > 0 ? -0.35 - t * 0.3 : Math.PI + 0.35 + t * 0.3;
-        // pina: folhinha lobada (pínulas)
-        ctx.save();
-        ctx.translate(cx, y);
-        ctx.rotate(ang);
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        const nL = 9, larg = comp * 0.16;
-        for (let i = 0; i <= nL; i++) { const u = i / nL; ctx.lineTo(u * comp, -larg * (1 - u * 0.85) * (0.55 + 0.45 * Math.abs(Math.sin(u * Math.PI * nL * 0.5)))); }
-        for (let i = nL; i >= 0; i--) { const u = i / nL; ctx.lineTo(u * comp, larg * (1 - u * 0.85) * (0.55 + 0.45 * Math.abs(Math.sin(u * Math.PI * nL * 0.5)))); }
-        ctx.closePath();
-        ctx.fillStyle = `hsl(${tom.h + (R() - 0.5) * 8} ${tom.s}% ${tom.l + (R() - 0.5) * 5}%)`;
-        ctx.fill();
-        ctx.strokeStyle = `hsla(${tom.h} ${tom.s}% ${tom.l * 1.6}% / 0.5)`;
-        ctx.lineWidth = 1.5;
-        ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(comp * 0.95, 0); ctx.stroke();
-        ctx.restore();
+    const frondes = [];
+    const n = 9 + Math.floor(R() * 4);
+    for (let k = 0; k < n; k++) frondes.push({ ang: (R() - 0.5) * 2.5, comp: H * (0.6 + R() * 0.35), z: R() });
+    // as do meio (mais em pé) ficam atrás
+    frondes.sort((a, b) => Math.abs(b.ang) - Math.abs(a.ang) + (a.z - b.z) * 0.3);
+    frondes.reverse();
+    for (const f of frondes) {
+      const bx = L / 2, by = H;
+      const dx = Math.sin(f.ang), dy = -Math.cos(f.ang);
+      const ponta = [bx + dx * f.comp * 0.95, by + dy * f.comp * 0.55 + Math.abs(dx) * f.comp * 0.25];
+      const ctrl = [bx + dx * f.comp * 0.45, by + dy * f.comp * 1.0];
+      const pt = (t) => {
+        const u = 1 - t;
+        return [u * u * bx + 2 * u * t * ctrl[0] + t * t * ponta[0], u * u * by + 2 * u * t * ctrl[1] + t * t * ponta[1]];
+      };
+      const tom = { h: 98 + R() * 16, s: 42 + R() * 12, l: 20 + R() * 6 + f.z * 6 };
+      const nP = 22;
+      for (let k = 1; k < nP; k++) {
+        const t = k / nP;
+        const [px, py] = pt(t), [qx, qy] = pt(Math.min(1, t + 0.02));
+        const dir = Math.atan2(qy - py, qx - px);
+        const comp = f.comp * 0.17 * Math.pow(Math.sin(Math.PI * Math.min(1, Math.pow(t, 0.7) * 1.02)), 0.9);
+        for (const lado of [-1, 1]) {
+          const a = dir + lado * 1.15;
+          ctx.save();
+          ctx.translate(px, py); ctx.rotate(a);
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.quadraticCurveTo(comp * 0.5, -comp * 0.16, comp, 0);
+          ctx.quadraticCurveTo(comp * 0.5, comp * 0.16, 0, 0);
+          ctx.fillStyle = `hsl(${tom.h + (R() - 0.5) * 8} ${tom.s}% ${tom.l + (R() - 0.5) * 5 + t * 6}%)`;
+          ctx.fill();
+          ctx.restore();
+        }
       }
+      ctx.strokeStyle = `hsl(${tom.h - 20} 35% ${tom.l * 0.8}%)`;
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(bx, by);
+      for (let i = 1; i <= 16; i++) { const [x, y] = pt(i / 16); ctx.lineTo(x, y); }
+      ctx.stroke();
     }
-    ctx.strokeStyle = '#4a4a22';
-    ctx.lineWidth = 5;
-    ctx.beginPath(); ctx.moveTo(cx, H); ctx.lineTo(cx, H * 0.02); ctx.stroke();
     ctx.restore();
   }
-  return recorte(cv, [50, 70, 30]);
+  return recorte(cv, [44, 62, 28]);
 }
 
 // ------------------------------------------------------------------ chão
@@ -403,7 +416,7 @@ export function gerarChao() {
     const x = R() * S, y = R() * S;
     const nivel = 60 + (i / N) * 180;
     const tipoR = R();
-    if (tipoR < 0.12) {
+    if (tipoR < 0.1) {
       // graveto
       const len = 120 + R() * 320, ang = R() * Math.PI * 2, esp = 3 + R() * 5;
       const cx = x + Math.cos(ang) * len * 0.5 + (R() - 0.5) * 40, cy = y + Math.sin(ang) * len * 0.5 + (R() - 0.5) * 40;
@@ -419,7 +432,7 @@ export function gerarChao() {
         ca.strokeStyle = `rgb(${nivel + 30},0,0)`; ca.lineWidth = esp; ca.lineCap = 'round';
         ca.beginPath(); ca.moveTo(px, py); ca.quadraticCurveTo(cx + ox, cy + oy, ex + ox, ey + oy); ca.stroke();
       });
-    } else if (tipoR < 0.42) {
+    } else if (tipoR < 0.78) {
       // agulhas caídas, em montinhos
       const n = 8 + Math.floor(R() * 14);
       for (let k = 0; k < n; k++) {

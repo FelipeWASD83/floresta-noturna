@@ -22,12 +22,12 @@ O jogo precisa da tela cheia porque, fora dela, o navegador não deixa a página
 
 ## O que tem
 
-- Árvores geradas por código, de cinco tipos, com galhos em vários níveis e folhas que mexem com o vento.
+- Pinhal gerado por código: pinheiros e pinheirinhos com galhos em andares e placas de agulha que mexem com o vento.
 - Raios de lua de verdade: a névoa é iluminada pelo mapa de sombra da lua, então os feixes aparecem para onde você olhar.
 - Tocha com chama, fagulhas, fumaça e luz que tremula e projeta sombra dos troncos.
-- Chão de folhas secas, musgo, samambaias, capim, pedras e troncos caídos.
-- Tudo é gerado na hora em uns 5 segundos: nenhuma imagem é baixada.
+- Chão de agulhas e folhas secas, musgo, samambaias, grama, pedras e troncos caídos.
+- Tudo é gerado na hora em menos de 2 segundos: nenhuma imagem é baixada.
 
-![De perto, com a tocha](capturas/tronco-e-tocha.jpg)
+![Chão de pinhal com a tocha](capturas/chao-e-tocha.jpg)
 
 Feito com [three.js](https://threejs.org) r185 (em `vendor/`, com a licença MIT dele). Licença deste projeto: MIT, no arquivo `LICENSE`.

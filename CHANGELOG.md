@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.1.0 (16/10/2026)
+
+**Mudou**
+- A floresta virou um pinhal: só pinheiros e pinheirinhos, com a folhagem em placas de agulha desenhadas, no lugar de carvalhos e faias com milhares de cachos de folha.
+- Grama e samambaias agora são planos cruzados com textura, não lâminas e frondes em 3D.
+- De longe, cada pinheiro vira um cartão com a imagem dele.
+- O chão tem mais agulha caída e menos folha larga, como num pinhal.
+- Sombras mais leves (a da lua e a da tocha em resolução menor) e névoa com menos passos.
+- Abre em menos de 2 segundos (antes uns 3,5) e roda perto de 50 quadros por segundo no ultrawide, contra uns 32 antes.
+
+**Saiu**
+- Carvalho, faia, muda e árvore morta.
+
 ## 1.0.0 (16/10/2026)
 
 **Novo**

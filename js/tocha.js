@@ -190,7 +190,7 @@ export class Tocha {
     this.luz = new THREE.PointLight(0xff8a3d, 6, 34, 2);
     this.luz.color.setRGB(1.0, 0.5, 0.19);
     this.luz.castShadow = true;
-    this.luz.shadow.mapSize.set(1024, 1024);
+    this.luz.shadow.mapSize.set(512, 512);
     this.luz.shadow.camera.near = 0.08;
     this.luz.shadow.camera.far = 34;
     this.luz.shadow.bias = -0.002;

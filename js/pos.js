@@ -55,7 +55,7 @@ void main() {
   vec3 dir = raio / dist;
   if (d >= 1.0) dist = uDistMax;
   dist = min(dist, uDistMax);
-  const int N = 72;
+  const int N = 60;
   // passos mais curtos perto (onde a luz da tocha muda rápido)
   float jit = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
   float cosL = dot(dir, uLuaDir);
