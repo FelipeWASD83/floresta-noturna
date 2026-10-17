@@ -30,4 +30,4 @@ O jogo precisa da tela cheia porque, fora dela, o navegador não deixa a página
 
 ![De perto, com a tocha](capturas/tronco-e-tocha.jpg)
 
-Feito com [three.js](https://threejs.org) r185.
+Feito com [three.js](https://threejs.org) r185 (em `vendor/`, com a licença MIT dele). Licença deste projeto: MIT, no arquivo `LICENSE`.

@@ -1,6 +1,6 @@
 # CLAUDE.md: floresta-noturna
 
-Jogo de andar numa floresta à noite, em primeira pessoa, com uma tocha na mão. É só para ver os gráficos: sem objetivo, sem inimigo, sem som. Pessoal, sem deploy, roda só no PC dele (RTX 3060, ultrawide 3440 × 1440). Regras gerais da pasta valem; aqui só o que é deste projeto. Criado em 16/10/2026.
+Jogo de andar numa floresta à noite, em primeira pessoa, com uma tocha na mão. É só para ver os gráficos: sem objetivo, sem inimigo, sem som. Pessoal, sem deploy, **repositório público (MIT)** desde a criação, por escolha dele; roda só no PC dele (RTX 3060, ultrawide 3440 × 1440). Regras gerais da pasta valem; aqui só o que é deste projeto. Criado em 16/10/2026.
 
 ## Como rodar
 `abrir.bat` (porta 4352) ou o preview `floresta-noturna`. Não abre por `file://` (módulos ES). `?qps` mostra o contador de quadros.
